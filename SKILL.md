@@ -27,10 +27,10 @@ Phase 1: INTAKE (정보 수집)
 Phase 2: COLLECT (뉴스 수집)
   ├── PROJECT_DIR 생성
   ├── news_collect.py 작성 (아래 코드)
-  └── python3 news_collect.py 실행 → CSV + JSON 저장
+  └── python3 news_collect.py 실행 → CSV + TXT 저장
 
 Phase 3: ANALYZE (선택적 분석)
-  └── JSON을 Read 도구로 읽고 Claude가 직접 분석
+  └── CSV/TXT를 Read 도구로 읽고 Claude가 직접 분석
 ```
 
 > **중요:** 매 작업 시작 시 **키워드+날짜 기반 고유 폴더**를 생성합니다.
@@ -354,10 +354,15 @@ def main():
             console.print(f"     [dim]{a['content'][:150]}...[/dim]")
             console.print(f"     [cyan]{a.get('content_length',0):,}자[/cyan]")
 
-    jf = fn.replace(".csv",".json")
-    with open(jf,"w",encoding="utf-8") as f:
-        json.dump({"query":queries,"count":len(articles),"success":len(ok),"failed":len(fail),"file":fn,"articles":articles},f,ensure_ascii=False,indent=2)
-    console.print(f"\n[dim]JSON: {jf}[/dim]")
+    tf = fn.replace(".csv",".txt")
+    lines = [f"뉴스 수집 결과: {', '.join(queries)}", f"수집일시: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+             f"총 {len(articles)}건", "="*70]
+    for i, a in enumerate(articles, 1):
+        lines += [f"\n[{i}] {a.get('title','')}", f"    출처: {a.get('source','')}",
+                  f"    URL:  {a.get('url','')}", f"    글자수: {a.get('content_length',0):,}자",
+                  "-"*70, a.get("content",""), "="*70]
+    Path(tf).write_text("\n".join(lines)+"\n", encoding="utf-8")
+    console.print(f"[green]TXT 저장: {tf}[/green]")
 
 if __name__ == "__main__": main()
 ```
@@ -368,7 +373,7 @@ if __name__ == "__main__": main()
 
 사용자가 "분석해줘", "요약해줘" 등을 요청하면 실행합니다.
 
-1. Read 도구로 JSON 파일 읽기
+1. Read 도구로 CSV 또는 TXT 파일 읽기
 2. Claude가 직접 분석
 3. 마크다운으로 보고
 
